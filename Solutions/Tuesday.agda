@@ -81,7 +81,6 @@ module Product where
   example₂ : ¬ Π ℕ EvenData
   example₂ f = one-is-not-even (f 1)
 
-
   ¬∘ : Pred A → Pred A
   ¬∘ P = ¬_ ∘ P
 
