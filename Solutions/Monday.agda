@@ -441,7 +441,6 @@ module Vec where
   untabulate (x ∷ xs) (next i) = untabulate xs i
 
   -- Note: `tabulate`, `untabulate` form an isomorphism.
-  -- We could proof it after we have defined equality.
 
 -- Predicates need not be unary, they can be binary, i.e. relations!
 Rel : Set → Set₁
