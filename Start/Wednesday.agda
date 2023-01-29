@@ -187,23 +187,19 @@ module MonoidSolver (Symbol : Set) (symbol-≟ : Dec.DecEq Symbol) where
     -- The evaluation of normal forms distributes over list concatenation.
     ++-homo : ∀ Γ (xs ys : NormalForm) → ⟦ xs ++ ys ⟧⇓ Γ ≡ ⟦ xs ⟧⇓ Γ ∙ ⟦ ys ⟧⇓ Γ
     ++-homo Γ []       ys = sym (idˡ _)
-    ++-homo Γ (x ∷ xs) ys =
-       begin
+    ++-homo Γ (x ∷ xs) ys = begin
          Γ x ∙ ⟦ xs ++ ys ⟧⇓ Γ          ≡⟨ cong (_ ∙_) (++-homo Γ xs ys) ⟩
          Γ x ∙ (⟦ xs ⟧⇓ Γ ∙ ⟦ ys ⟧⇓ Γ)  ≡⟨ sym (assoc _ _ _) ⟩
-         (Γ x ∙ ⟦ xs ⟧⇓ Γ) ∙ ⟦ ys ⟧⇓ Γ
-       ∎
+         (Γ x ∙ ⟦ xs ⟧⇓ Γ) ∙ ⟦ ys ⟧⇓ Γ  ∎
 
     -- Normalising and then evaluating the normal form is equal to evaluating the original expression.
     correct : ∀ Γ (expr : Expr) → ⟦ normalise expr ⟧⇓ Γ ≡ ⟦ expr ⟧ Γ
     correct Γ ‵ε         = refl
     correct Γ (‵ x)      = idʳ _
-    correct Γ (le ‵∙ re) =
-      begin
+    correct Γ (le ‵∙ re) = begin
         ⟦ normalise le      ++  normalise re ⟧⇓ Γ  ≡⟨ ++-homo Γ (normalise le) (normalise re) ⟩
         ⟦ normalise le ⟧⇓ Γ ∙ ⟦ normalise re ⟧⇓ Γ  ≡⟨ cong₂ _∙_ (correct Γ le) (correct Γ re) ⟩
-        ⟦ le ⟧            Γ ∙ ⟦ re ⟧            Γ
-      ∎
+        ⟦ le ⟧            Γ ∙ ⟦ re ⟧            Γ  ∎
 
     -- We describe what it is to be a solution to an equation.
     -- If both sides normalise to the same symbols in the same order,
@@ -222,13 +218,11 @@ module MonoidSolver (Symbol : Set) (symbol-≟ : Dec.DecEq Symbol) where
     -- Pattern matching using with makes the goal type compute.
     solve (lhs ‵≡ rhs) with Dec.List-≟ symbol-≟ (normalise lhs) (normalise rhs)
     solve (lhs ‵≡ rhs) | Dec.no  _         = tt
-    solve (lhs ‵≡ rhs) | Dec.yes lhs⇓≡rhs⇓ = λ Γ →
-      begin
+    solve (lhs ‵≡ rhs) | Dec.yes lhs⇓≡rhs⇓ = λ Γ → begin
         ⟦ lhs ⟧ Γ             ≡⟨ sym (correct Γ lhs) ⟩
         ⟦ normalise lhs ⟧⇓ Γ  ≡⟨ cong (λ ● → ⟦ ● ⟧⇓ Γ) lhs⇓≡rhs⇓ ⟩
         ⟦ normalise rhs ⟧⇓ Γ  ≡⟨ correct Γ rhs ⟩
-        ⟦ rhs ⟧ Γ
-      ∎
+        ⟦ rhs ⟧ Γ             ∎
 
 open MonoidSolver
 

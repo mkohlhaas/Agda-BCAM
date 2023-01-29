@@ -1,10 +1,11 @@
-{-# OPTIONS --guardedness #-}
+{-# OPTIONS --allow-unsolved-metas --guardedness #-}
 
 import Solutions.Monday    as Mon
 import Solutions.Tuesday   as Tue
 import Solutions.Wednesday as Wed
-open Mon using (⊤; tt; ℕ; zero; suc)
-open Mon.Simple using (_⊎_; inl; inr)
+
+open Mon         using (⊤; tt; ℕ; zero; suc; _≡_; refl)
+open Mon.Simple  using (_⊎_; inl; inr)
 open Tue.Product using (Σ; _,_; fst; snd; _×_)
 
 module Solutions.Thursday where
@@ -12,88 +13,127 @@ module Solutions.Thursday where
 variable
   A B C S : Set
 
--- Things that we skipped so far
---------------------------------
+----------------------------------------------------------------------------------------------------
+--                                   `with`, `rewrite`, `subst`                                   --
+----------------------------------------------------------------------------------------------------
 
 module WithAbstraction where
-  open Mon using (Bool; true; false; Pred; _≡_; refl; _+_; subst; +-comm)
+  open Mon      using (Bool; true; false; Pred; _≡_; refl; _+_; subst; +-comm)
   open Mon.List using (List; []; _∷_)
 
-  -- With abstraction
-  -- You can use "with abstraction" to pattern match on intermediary computations
-  -- These can be nested, or executed simultaneously
+------------
+-- `with` --
+------------
+
+  -- You can use "with abstraction" to pattern match on intermediary computations.
+  -- These can be nested, or executed simultaneously.
 
   filter : (A → Bool) → List A → List A
   filter f [] = []
-  filter f (x ∷ xs) with f x
-  filter f (x ∷ xs) | true = x ∷ filter f xs
-  filter f (x ∷ xs) | false = filter f xs
+  filter f (a ∷ as) with f a
+  filter f (a ∷ as) | true  = a ∷ filter f as
+  filter f (a ∷ as) | false = filter f as
 
-  -- Alternative notation
-  filter′ : (A → Bool) → List A → List A
-  filter′ f [] = []
-  filter′ f (x ∷ xs) with f x
-  ...                | true = x ∷ filter′ f xs
-  ...                | false = filter′ f xs
+  -- alternative notation
+  filter' : (A → Bool) → List A → List A
+  filter' f [] = []
+  filter' f (a ∷ as) with f a
+  ...                | true  = a ∷ filter' f as
+  ...                | false = filter' f as
 
-
-  -- The goal type and the type of the arguments are generalised over the value of the scrutinee
+  -- The goal type and the type of the arguments are generalised over the value of the scrutinee.
   thm : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
-  -- 1) Here (p : P (n + m)) and (eq : n + m ≡ m + n)
-  -- thm n m p with +-comm n m
-  -- thm n m p | eq = {!!}
-  -- 2) Here (p : P x) and (eq : x ≡ m + n)
-  -- thm n m p with n + m | +-comm n m
-  -- thm n m p | x | eq = {!!}
-  -- 3) Pattern matching we get (p : P (m + n)), the dot signifies that the argument is uniquely determined
-  thm n m p with n + m | +-comm n m
-  thm n m p | .(m + n) | refl = p
+  thm n m p with +-comm n m
+  thm n m p | eq = {!!}  -- we are stuck here because we can't pattern match on `eq`
 
-  -- This is such a common formula that there is special syntax for it
-  thm′ : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
-  thm′ {P} n m pr rewrite +-comm n m = pr
+  -- The dot signifies that the argument is uniquely determined.
+  -- The underscore signifies that we don't care what it actually is. Especially useful if it's a longish expression.
+  thm' : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
+  thm' n m p with n + m | +-comm n m
+  thm' n m p | .(m + n) | refl = p
 
-  -- We could use subst to be more explicit about *where* the rewrite happens
-  thm′′ : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
-  thm′′ {P} n m p = subst {P = P} (+-comm n m) p
+---------------
+-- `rewrite` --
+---------------
 
+  -- This is such a common formula that there is special syntax for it.
+  thm'' : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
+  thm'' n m p rewrite +-comm n m = p
 
--- A little on coinductive types
---------------------------------
+-------------
+-- `subst` --
+-------------
+
+  -- Rewrite goes through the goal and all assumptions to find applicable replacements.
+  -- We could use `subst` to be more explicit about *where* the rewrite happens.
+  thm''' : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
+  thm''' {P} n m p = subst {P = P} (+-comm n m) p
+
+  -- As a reminder:
+  -- subst : {x y : A} {P : Pred A} → x ≡ y → P x → P y
+
+----------------------------------------------------------------------------------------------------
+--                                   A Little on Coinductive Types                                --
+----------------------------------------------------------------------------------------------------
 
 -- Stolen from https://github.com/pigworker/CS410-17/blob/master/lectures/Lec6Done.agda
 
+-- In Haskell Lists can be infinite due to lazyness. But you don't know by looking at the signature
+-- whether you are dealing with a finite or infinite list.
+
+-- Inductive   data types are finite.
+-- Coinductive data types are potentially infinite.
+
+-- potentially infinite list
+-- X is the type of the element of the list.
+-- B is the type of the tail    of the list.
+-- Left  side (⊤)     will go to Nil ([]).   (Ends the list.)
+-- Right side (X × B) will go to Cons (_∷_). (Gives next list element.)
 ListT : Set → Set → Set
 ListT X B = ⊤ ⊎ (X × B)
 
 module List where
   data List (A : Set) : Set where
-    [] : List A
+    []  : List A
     _∷_ : A → List A → List A
 
+  infixr 20 _∷_
+
+  -- List constructor using ListT.
   mkList : ListT A (List A) → List A
-  mkList (inl tt) = []
+  mkList (inl tt)       = []
   mkList (inr (a , as)) = a ∷ as
 
+  -- alg = algebra
   foldr : (ListT A B → B) → List A → B
-  foldr alg [] = alg (inl tt)
-  foldr alg (x ∷ xs) = alg (inr (x , foldr alg xs))
+  foldr alg []       = alg (inl tt)
+  foldr alg (a ∷ as) = alg (inr (a , foldr alg as))
 
   list-id : List A → List A
   list-id = foldr mkList
 
   incr : ListT A ℕ → ℕ
-  incr (inl tt) = zero
-  incr (inr (_ , n)) = suc n
+  incr (inl tt)      = zero
+  incr (inr (a , n)) = suc n
 
+  -- use basic pattern matching
   length : List A → ℕ
-  length = foldr incr
+  length []       = zero
+  length (a ∷ as) = suc (length as)
 
+  -- this time use `foldr`
+  length' : List A → ℕ
+  length' x = foldr incr x
 
+  test₁ : length' (1 ∷ 2 ∷ 3 ∷ []) ≡ 3
+  test₁ = refl
+
+-- potentially infinite lists as a coinductive list
 module CoList where
   record CoList (A : Set) : Set where
     coinductive
     field
+      -- alternative representation:
       -- next : ⊤ ⊎ (A × CoList A)
       next : ListT A (CoList A)
 
@@ -103,22 +143,33 @@ module CoList where
   next [] = inl tt
 
   _∷_ : A → CoList A → CoList A
-  next (x ∷ xs) = inr (x , xs)
+  next (a ∷ as) = inr (a , as)
 
+  -- Could be used for a random number generator. (S = seed.)
+  --
+  --    Creates a new random number of type A
+  --    and a new seed S from a given seed.
+  --              |
+  --              |      Initial seed.
+  --              |           |
+  --              |           | Infinite list of random numbers.
+  --              |           |      |
+  --        ^^^^^^^^^^^^^^^   ^   ^^^^^^^^
   unfoldr : (S → ListT A S) → S → CoList A
   next (unfoldr coalg s) with coalg s
   next (unfoldr coalg s) | inl tt = inl tt
   next (unfoldr coalg s) | inr (a , s') = inr (a , unfoldr coalg s')
 
   repeat : A → CoList A
-  repeat = unfoldr λ x → inr (x , x)
+  repeat = unfoldr (λ a → inr (a , a))
 
   take : ℕ → CoList A → List.List A
-  take zero xs = List.[]
-  take (suc n) xs with next xs
-  take (suc n) xs | inl tt = List.[]
-  take (suc n) xs | inr (a , xs') = a List.∷ take n xs'
+  take zero    as = List.[]
+  take (suc n) as with next as
+  take (suc n) as | inl x = List.[]
+  take (suc n) as | inr (a , as') = a List.∷ (take n as')
 
+-- infinite list
 module Stream where
   record Stream (A : Set) : Set where
     coinductive
@@ -129,18 +180,15 @@ module Stream where
   open Stream
 
   forever : A → Stream A
-  head (forever x) = x
-  tail (forever x) = forever x
+  head (forever a) = a
+  tail (forever a) = forever a
 
   unfold : (S → A × S) → S → Stream A
   head (unfold coalg s) = fst (coalg s)
   tail (unfold coalg s) = unfold coalg (snd (coalg s))
 
-
-
----------------------------------------------
--- If you are interested in more
--- Documentation for Agda: https://agda.readthedocs.io/en/v2.6.0.1/index.html
--- Programming Language Foundations in Agda: https://plfa.github.io/
--- Lots of other nice tutorials online
--- The standard library: https://agda.github.io/agda-stdlib/
+-- Summary:
+-- · List   = finite list
+-- · ListT  = potentially infinite list
+-- · CoList = potentially infinite list
+-- · Stream = infinite list

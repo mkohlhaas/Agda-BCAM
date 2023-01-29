@@ -566,9 +566,7 @@ _∎ _ = refl
 -- This starts to look like what one would do on the whiteboard or with paper and pencil.
 +-comm′ : ∀ x y → x + y ≡ y + x
 +-comm′ x zero    = +-idʳ x
-+-comm′ x (suc y) =
-    begin
++-comm′ x (suc y) = begin
       (x + suc y)  ≡⟨ +-suc _ _ ⟩
       suc (x + y)  ≡⟨ cong suc (+-comm′ x y) ⟩
-      suc (y + x)
-    ∎
+      suc (y + x)  ∎
