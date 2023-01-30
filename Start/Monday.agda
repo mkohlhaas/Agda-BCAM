@@ -19,7 +19,6 @@ module Simple where
     field
       fst : A
       snd : B
-
   open _×_
 
   data _⊎_ (A B : Set) : Set where
@@ -80,7 +79,6 @@ variable
   A B C D : Set ℓ
 
 data ℕ : Set where
-
   zero : ℕ
   suc  : ℕ → ℕ
 
@@ -229,6 +227,7 @@ n < m = suc n ≤ m
 ≤-trans = {!!}
 
 infix 10 _≡_
+
 data _≡_ (x : A) : A → Set where
   refl : x ≡ x
 
