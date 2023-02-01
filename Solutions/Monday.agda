@@ -355,52 +355,31 @@ module Fin where
   to-ℕ start    = zero
   to-ℕ (next n) = suc (to-ℕ n)
 
-  -----------
-  -- Fin 1 --
-  -----------
-
   -- Fin 1 has 1 inhabitant.
-  _ : Fin 1
-  _ = start
-
-  -- Error
-  -- _ : Fin 1
-  -- _ = next(start)
-
-  -----------
-  -- Fin 2 --
-  -----------
+  Fin1 : Fin 1
+  Fin1 = start
 
   -- Fin 2 has 2 inhabitants.
-  _ : Fin 2
-  _ = start
+  Fin2 : Fin 2
+  Fin2 = start
 
-  _ : Fin 2
-  _ = next(start)
-
-  -- Error
-  -- _ : Fin 2
-  -- _ = next(next(start))
-
-  -----------
-  -- Fin 3 --
-  -----------
+  Fin2' : Fin 2
+  Fin2' = next(start)
 
   -- Fin 3 has 3 inhabitants.
-  _ : Fin 3
-  _ = start
+  Fin3 : Fin 3
+  Fin3 = start
 
-  _ : Fin 3
-  _ = next(start)
+  Fin3' : Fin 3
+  Fin3' = next(start)
 
-  _ : Fin 3
-  _ = next(next(start))
-
-  -- Error
-  -- _ : Fin 3
-  -- _ = next(next(next(start)))
+  Fin3'' : Fin 3
+  Fin3'' = next(next(start))
 
   -- ... and so on
+
+  test₃ : ℕ
+  test₃ = to-ℕ Fin2
 
 module Vec where
   open Fin
@@ -430,14 +409,16 @@ module Vec where
   (a ∷ as) ! next i = as ! i
 
   -- A vector Vec A n is just the inductive form of a function Fin n → A.
+  -- Setter
   tabulate : ∀ {n} → (Fin n → A) → Vec A n
   tabulate {n = zero}  f = []
   tabulate {n = suc n} f = f start ∷ tabulate (f ∘ next)
 
   -- same as (_!_)
+  -- Setter
   untabulate : Vec A n → (Fin n → A)
   untabulate [] ()
-  untabulate (x ∷ xs) start = x
+  untabulate (x ∷ xs) start    = x
   untabulate (x ∷ xs) (next i) = untabulate xs i
 
   -- Note: `tabulate`, `untabulate` form an isomorphism.
@@ -484,20 +465,20 @@ data _≡_ (x : A) : A → Set where
 
 -- Left identity: +-idˡ
 -- Because of the way in which we defined _+_, zero + x ≡ x holds definitionally (the first case in the definition).
-+-idˡ : ∀ x → (zero + x) ≡ x
-+-idˡ x = refl
++-idˡ : ∀ n → (zero + n) ≡ n
++-idˡ n = refl
 
 -- We show that equality respects congruence.
 cong : {a₁ a₂ : A} (f : A → B) → a₁ ≡ a₂ → f a₁ ≡ f a₂
-cong f refl = refl
+cong _ refl = refl
 
 -- A binary version that will come in use later on.
 cong₂ : {a₁ a₂ : A} {b₁ b₂ : B} (f : A → B → C) → a₁ ≡ a₂ → b₁ ≡ b₂ → f a₁ b₁ ≡ f a₂ b₂
-cong₂ f refl refl = refl
+cong₂ _ refl refl = refl
 
 -- ... and so on
 cong₃ : {a₁ a₂ : A} {b₁ b₂ : B} {c₁ c₂ : C} (f : A → B → C → D) → a₁ ≡ a₂ → b₁ ≡ b₂ → c₁ ≡ c₂ → f a₁ b₁ c₁ ≡ f a₂ b₂ c₂
-cong₃ f refl refl refl = refl
+cong₃ _ refl refl refl = refl
 
 -- Right identity: +-idʳ
 -- However +-idʳ does not hold definitionally.
@@ -507,7 +488,7 @@ cong₃ f refl refl refl = refl
 +-idʳ (suc n) = cong suc (+-idʳ n)
 
 example₂ : ∀ n → (1 + n) + zero ≡ (1 + n)
-example₂ n = +-idʳ _
+example₂ _ = +-idʳ _
 
 -- Equality is an equivalence relation.
 -- An equivalence relation is reflexive, symmetric, and transitive.
@@ -552,7 +533,7 @@ begin_ x≡y = x≡y
 step-≡ : ∀ (x {y z} : A) → y ≡ z → x ≡ y → x ≡ z
 step-≡ _ y≡z x≡y = trans x≡y y≡z
 
-syntax step-≡ x y≡z x≡y = x ≡⟨  x≡y ⟩ y≡z
+syntax step-≡ x y≡z x≡y = x ≡⟨ x≡y ⟩ y≡z
 
 _∎ : ∀ (x : A) → x ≡ x
 _∎ _ = refl
@@ -564,9 +545,9 @@ _∎ _ = refl
 
 -- The equational resoning style allows us to explicitly write down the goals at each stage.
 -- This starts to look like what one would do on the whiteboard or with paper and pencil.
-+-comm′ : ∀ x y → x + y ≡ y + x
-+-comm′ x zero    = +-idʳ x
-+-comm′ x (suc y) = begin
++-comm' : ∀ x y → x + y ≡ y + x
++-comm' x zero    = +-idʳ x
++-comm' x (suc y) = begin
       (x + suc y)  ≡⟨ +-suc _ _ ⟩
-      suc (x + y)  ≡⟨ cong suc (+-comm′ x y) ⟩
+      suc (x + y)  ≡⟨ cong suc (+-comm' x y) ⟩
       suc (y + x)  ∎

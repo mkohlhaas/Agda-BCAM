@@ -21,7 +21,7 @@ module Product where
   open Simple using (¬_)
 
   variable
-    P Q : A → Set
+    P Q : Pred A
 
   -- Pi types: dependent function types.
   -- For *every* x of type A, the predicate P x holds.
@@ -156,12 +156,21 @@ module Product where
   ≤-to-Fin' (s≤s z≤n)       = (start , refl)
   ≤-to-Fin' (s≤s (s≤s n<m)) = map next (cong suc) (≤-to-Fin' (s≤s n<m))
 
+  -- Goal: Σ-syntax (Fin (suc (suc m))) (λ i → to-ℕ i ≡ suc n)
+  -- Have: Σ-syntax (Fin      (suc m))  (λ i → to-ℕ i ≡ n)
+
   Fin-≤-inv : (i : Fin m) → ≤-to-Fin (Fin-to-≤ i) ≡ i
   Fin-≤-inv start           = refl
   Fin-≤-inv (next start)    = refl
   Fin-≤-inv (next (next i)) = cong next (Fin-≤-inv (next i))
 
+  -- Goal: ≤-to-Fin (s≤s (Fin-to-≤ i)) ≡ next i
+  -- Have: ≤-to-Fin      (Fin-to-≤ i)  ≡      i
+
   ≤-Fin-inv : (lt : Σ[ n ∈ ℕ ] n < m)
             → (to-ℕ (≤-to-Fin (snd lt)) , Fin-to-≤ (≤-to-Fin (snd lt))) ≡ lt
   ≤-Fin-inv (zero  , s≤s z≤n)       = refl
   ≤-Fin-inv (suc n , s≤s (s≤s n<m)) = cong (map suc s≤s) (≤-Fin-inv (_ , s≤s n<m))
+
+  -- Goal: (suc (to-ℕ (≤-to-Fin (s≤s n<m))) , s≤s (Fin-to-≤ (≤-to-Fin (s≤s n<m)))) ≡ (suc n , s≤s (s≤s n<m))
+  -- Have:      (to-ℕ (≤-to-Fin (s≤s n<m))  ,      Fin-to-≤ (≤-to-Fin (s≤s n<m)))  ≡ (    n ,     (s≤s n<m))

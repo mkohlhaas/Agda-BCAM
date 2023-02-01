@@ -4,7 +4,7 @@ open import Solutions.Monday
 open import Solutions.Tuesday
 open        Fin               using (Fin; start; next)
 open        List              using (List; []; _∷_; _++_)
-open        Vec               using (Vec; []; _∷_; _!_)
+open        Vec               using (Vec;  []; _∷_; _!_)
 
 module Solutions.Wednesday where
 
@@ -91,6 +91,9 @@ module Isomorphism where
   from∘to (x iso-∘ y) a = trans (cong (from y) (from∘to x (to   y a))) (from∘to y a)
   to∘from (x iso-∘ y) c = trans (cong (to   x) (to∘from y (from x c))) (to∘from x c)
 
+  -- Goal: (from y ∘ from x) ((to x ∘ to y) a) ≡ a
+  -- Goal: from y (from x (to x (to y a))) ≡ a
+
 ------------------
 -- Decidability --
 ------------------
@@ -125,10 +128,9 @@ module Dec where
   zero  ℕ-≟ zero  = yes refl
   zero  ℕ-≟ suc m = no (λ ())
   suc n ℕ-≟ zero  = no (λ ())
-  suc n ℕ-≟ suc m = elim
-                     (yes ∘ cong suc)
-                     (no ∘ λ ¬n≡m → ¬n≡m ∘ suc-injective)
-                     (n ℕ-≟ m)
+  suc n ℕ-≟ suc m = elim (yes ∘ cong suc)
+                         (no ∘ λ ¬n≡m → ¬n≡m ∘ suc-injective)
+                         (n ℕ-≟ m)
 
   ----------------------------
   -- Fin is Decidably Equal --
@@ -143,10 +145,9 @@ module Dec where
   start  Fin-≟ start  = yes refl
   start  Fin-≟ next j = no (λ ())
   next i Fin-≟ start  = no (λ ())
-  next i Fin-≟ next j = elim
-                          (yes ∘ cong next)
-                          (no  ∘ λ ¬i≡j → ¬i≡j ∘ next-injective)
-                          (i Fin-≟ j)
+  next i Fin-≟ next j = elim (yes ∘ cong next)
+                             (no  ∘ λ ¬i≡j → ¬i≡j ∘ next-injective)
+                             (i Fin-≟ j)
 
   -----------------------------------------------------
   -- Lists Are Decidably Equal When Its Elements Are --
@@ -168,10 +169,9 @@ module Dec where
   List-≟ _A-≟_ []       []       = yes refl
   List-≟ _A-≟_ (x ∷ xs) []       = no (λ ())
   List-≟ _A-≟_ []       (y ∷ ys) = no (λ ())
-  List-≟ _A-≟_ (x ∷ xs) (y ∷ ys) = elim
-                                     (yes ∘ Isomorphism.curry(cong₂ (_∷_)))
-                                     (no  ∘ (λ ¬x≡y×xs≡ys → ¬x≡y×xs≡ys ∘ ∷-injective))
-                                     (x A-≟ y ×-dec List-≟ _A-≟_ xs ys)
+  List-≟ _A-≟_ (x ∷ xs) (y ∷ ys) = elim (yes ∘ Isomorphism.curry(cong₂ (_∷_)))
+                                        (no  ∘ (λ ¬x≡y×xs≡ys → ¬x≡y×xs≡ys ∘ ∷-injective))
+                                        (x A-≟ y ×-dec List-≟ _A-≟_ xs ys)
 
 ----------------
 -- Interfaces --

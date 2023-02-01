@@ -38,8 +38,8 @@ module WithAbstraction where
   filter' : (A → Bool) → List A → List A
   filter' f [] = []
   filter' f (a ∷ as) with f a
-  ...                | true  = a ∷ filter' f as
-  ...                | false = filter' f as
+  ... | true  = a ∷ filter' f as
+  ... | false = filter' f as
 
   -- The goal type and the type of the arguments are generalised over the value of the scrutinee.
   thm : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
@@ -69,7 +69,7 @@ module WithAbstraction where
   thm''' : {P : Pred ℕ} (n m : ℕ) → P (n + m) → P (m + n)
   thm''' {P} n m p = subst {P = P} (+-comm n m) p
 
-  -- As a reminder:
+  -- As a reminder: Substitute x with y in P. In `P x` substitute x with y.
   -- subst : {x y : A} {P : Pred A} → x ≡ y → P x → P y
 
 ----------------------------------------------------------------------------------------------------
@@ -96,7 +96,6 @@ module List where
   data List (A : Set) : Set where
     []  : List A
     _∷_ : A → List A → List A
-
   infixr 20 _∷_
 
   -- List constructor using ListT.
@@ -136,7 +135,6 @@ module CoList where
       -- alternative representation:
       -- next : ⊤ ⊎ (A × CoList A)
       next : ListT A (CoList A)
-
   open CoList
 
   [] : CoList A
@@ -160,14 +158,28 @@ module CoList where
   next (unfoldr coalg s) | inl tt = inl tt
   next (unfoldr coalg s) | inr (a , s') = inr (a , unfoldr coalg s')
 
+  unfoldr' : (S → ListT A S) → S → CoList A
+  next (unfoldr' f s) with f s
+  ... | inl tt      = inl tt
+  ... | inr (a , s) = inr (a , unfoldr' f s)
+
   repeat : A → CoList A
-  repeat = unfoldr (λ a → inr (a , a))
+  next (repeat a) = inr (a , repeat a)
+
+  repeat' : A → CoList A
+  repeat' = unfoldr (λ a → inr (a , a))
 
   take : ℕ → CoList A → List.List A
   take zero    as = List.[]
   take (suc n) as with next as
   take (suc n) as | inl x = List.[]
   take (suc n) as | inr (a , as') = a List.∷ (take n as')
+
+  take' : ℕ → CoList A → List.List A
+  take' zero    _  = List.[]
+  take' (suc n) as with next as
+  ... | inl tt       = List.[]
+  ... | inr (a , as) = a List.∷ (take' n as)
 
 -- infinite list
 module Stream where
@@ -176,7 +188,6 @@ module Stream where
     field
       head : A
       tail : Stream A
-
   open Stream
 
   forever : A → Stream A
